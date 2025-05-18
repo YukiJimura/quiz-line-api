@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE API 学習クイズ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light background */
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #1a202c; /* Darker heading color */
+            margin-bottom: 20px;
+        }
+        .question {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0; /* Light border */
+        }
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 10px;
+            cursor: pointer;
+            padding: 10px;
+            border: 1px solid #cbd5e0; /* Light border */
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+        }
+        .options label:hover {
+            background-color: #f7fafc; /* Very light hover background */
+        }
+        .options input[type="checkbox"],
+        .options input[type="radio"] {
+            margin-right: 10px;
+        }
+        .check-button {
+            background-color: #4299e1; /* Blue */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease;
+        }
+        .check-button:hover {
+            background-color: #3182ce; /* Darker blue */
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .result.correct {
+            background-color: #c6f6d5; /* Light green */
+            color: #2f855a; /* Dark green */
+            border: 1px solid #9ae6b4; /* Green border */
+        }
+        .result.incorrect {
+            background-color: #fed7d7; /* Light red */
+            color: #c53030; /* Dark red */
+            border: 1px solid #feb2b2; /* Red border */
+        }
+        .explanation {
+            margin-top: 10px;
+            font-size: 0.95em;
+            color: #4a5568; /* Gray */
+        }
+        .explanation strong {
+            color: #2d3748; /* Darker gray */
+        }
+        .source {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #718096; /* Lighter gray */
+        }
+        .source a {
+            color: #4299e1; /* Blue link */
+            text-decoration: none;
+        }
+        .source a:hover {
+            text-decoration: underline;
+        }
+
+        /* Specific styles for new question types */
+        .image-option {
+            display: inline-block;
+            margin: 10px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+        .image-option img {
+            width: 200px; /* Adjust size as needed */
+            height: auto;
+            border-radius: 6px;
+        }
+        .image-option.selected {
+            border-color: #4299e1; /* Highlight selected image */
+        }
+        .fill-in-the-blank-container {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+        }
+        .fill-in-the-blank-input {
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            padding: 5px 8px;
+            margin: 0 5px;
+            min-width: 100px; /* Ensure input is wide enough */
+        }
+         .fill-in-the-blank-info {
+             font-size: 0.9em;
+             color: #718096;
+             margin-left: 5px;
+         }
+         .hint-button {
+            background-color: #e2e8f0; /* Light gray */
+            color: #4a5568; /* Gray */
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: 10px;
+            transition: background-color 0.2s ease;
+         }
+         .hint-button:hover {
+             background-color: #cbd5e0; /* Darker light gray */
+         }
+         .hint-text {
+             margin-top: 5px;
+             font-size: 0.9em;
+             color: #4a5568;
+             font-style: italic;
+         }
+
+        .matching-pair {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .matching-pair span {
+            flex-basis: 40%;
+            margin-right: 10px;
+        }
+        .matching-pair select {
+            flex-basis: 55%;
+            padding: 8px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            background-color: white;
+        }
+        .dropdown-select {
+             padding: 8px;
+             border: 1px solid #cbd5e0;
+             border-radius: 4px;
+             background-color: white;
+             margin-top: 10px;
+        }
+        .true-false-options label {
+             display: inline-block;
+             margin-right: 20px;
+        }
+
+        .start-screen, .result-screen, .end-screen {
+            text-align: center;
+            padding: 50px 20px;
+        }
+        .start-button, .next-question-button, .next-day-button, .restart-button {
+            background-color: #48bb78; /* Green */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2em;
+            margin-top: 20px;
+            transition: background-color 0.2s ease;
+        }
+         .next-question-button {
+             background-color: #4299e1; /* Blue */
+         }
+         .next-question-button:hover {
+             background-color: #3182ce; /* Darker Blue */
+         }
+        .start-button:hover, .next-day-button:hover, .restart-button:hover {
+            background-color: #38a169; /* Darker green */
+        }
+        .result-message {
+            font-size: 1.1em;
+            margin-top: 15px;
+            color: #2d3748;
+        }
+         .api-level {
+             font-size: 1.2em;
+             font-weight: bold;
+             margin-top: 15px;
+             color: #2b6cb0; /* Darker blue */
+         }
+         .unlock-message {
+             font-size: 1.1em;
+             color: #c53030; /* Red */
+             margin-top: 20px;
+         }
+         .quiz-period {
+             font-size: 1em;
+             margin-top: 10px;
+             color: #4a5568; /* Gray */
+         }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold text-center mb-8">LINE API 学習クイズ</h1>
+
+        <div id="start-screen" class="start-screen">
+            <h2 class="text-xl font-semibold mb-4">LINE API 学習クイズへようこそ！</h2>
+            <p>これまでの学習内容をクイズで確認しましょう。</p>
+            <p id="quiz-period" class="quiz-period"></p> <button id="start-button" class="start-button">クイズ開始</button>
+        </div>
+
+        <div id="quiz-area" class="hidden">
+            <div id="unlock-message" class="unlock-message hidden"></div> </div>
+
+        <div id="next-button-area" class="text-center hidden">
+             <button id="next-question-button" class="next-question-button">次の問題へ</button>
+             <button id="show-result-button" class="next-question-button">結果を見る</button> </div>
+
+
+        <div id="result-screen" class="result-screen hidden">
+            <h2 id="result-title" class="text-xl font-semibold mb-4"></h2>
+            <p id="score" class="text-lg font-bold"></p>
+            <p id="api-level" class="api-level"></p>
+            <p id="result-message" class="result-message"></p>
+            <button id="next-day-button" class="next-day-button hidden">次の日へ進む</button>
+        </div>
+
+         <div id="end-screen" class="end-screen hidden">
+            <h2 class="text-xl font-semibold mb-4">クイズ終了！</h2>
+            <p id="final-score" class="text-lg font-bold"></p>
+             <p id="final-api-level" class="api-level"></p>
+             <p id="end-message" class="result-message"></p>
+            <button id="restart-button" class="restart-button">最初からやり直す</button>
+        </div>
+
+    </div>
+
+    <script>
+        // クイズデータ
+        const quizData = [
+             // Day 1 (5月19日解禁)
+            {
+                unlockDate: '2025/05/19',
+                questions: [
+                    {
+                        day: 1,
+                        questionNumber: 1,
+                        type: 'fill-in-the-blank', // 形式: 穴埋め
+                        questionText: "『【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用』によると、Webhookとは、「特定のイベントが発生した際に、事前に設定された他のアプリケーションに通知を___的に送信する仕組み」です。",
+                        correctAnswer: "自動", // 穴埋めの正解
+                        answerLength: 2, // 文字数
+                        hint: "手動の反対です。", // ヒントテキスト
+                        explanation: "正解は「自動」です。\nWebhookは、特定のイベントが発生した際に、手動ではなく自動的に通知を送信する仕組みです。",
+                        source: "出典：【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/webhook.html"
+                    },
+                    {
+                        day: 1,
+                        questionNumber: 2,
+                        type: 'multiple-choice', // 形式: 複数選択
+                        questionText: "『【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説』によると、「認証プロバイダー」になることで利用可能になる特定の機能があります。\n以下の選択肢のうち、この『【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説』に記載されている「認証プロバイダーになるメリット」として挙げられている機能はどれですか？正しいものを全て選んでください。",
+                        options: [
+                            "LINE通知メッセージ",
+                            "LINE VOOMへの動画投稿",
+                            "既読API",
+                            "友だち追加時の自動応答メッセージ設定"
+                        ],
+                        correctAnswers: [0, 2], // 0-indexed
+                        explanation: "正解は 1, 3 です。\n『【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説』の「認証プロバイダーになるメリット」の項目には、以下の機能が記載されています。\n• LINE通知メッセージ（選択肢1）\n• ミッションスタンプ\n• 既読API（選択肢3）\n• クイック入力\n選択肢2の「LINE VOOMへの動画投稿」や選択肢4の「友だち追加時の自動応答メッセージ設定」は、認証プロバイダーであるかどうかにかかわらず、LINE公式アカウントの機能として利用できる一般的な機能であり、このソースでは認証プロバイダーのメリットとして挙げられていません。",
+                        source: "出典：【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/provider.html"
+                    },
+                    {
+                        day: 1,
+                        questionNumber: 3,
+                        type: 'multiple-choice', // 形式: 複数選択
+                        questionText: "『【図解あり】LINEのID連携でできることとは？認証の仕組みと企業が導入すべきメリットを解説』によると、ユーザーのLINEアカウントと企業のシステムやサービスを紐づける「ID連携」によって、企業は保有する顧客情報とLINEのユーザー情報を一元管理し、様々な施策が実現できます。\n以下の選択肢のうち、この『【図解あり】LINEのID連携でできることとは？認証の仕組みと企業が導入すべきメリットを解説』に記載されているID連携によって可能になることとして具体的に挙げられているのはどれですか？正しいものを全て選んでください。",
+                        options: [
+                            "セグメント配信",
+                            "LINE Keepへの自動保存",
+                            "リッチメニューの出し分け",
+                            "Webサイト・アプリとの連携"
+                        ],
+                        correctAnswers: [0, 2, 3], // 0-indexed
+                        explanation: "正解は 1, 3, 4 です。\n『【図解あり】LINEのID連携でできることとは？認証の仕組みと企業が導入すべきメリットを解説』の「LINE APIを活用したID連携とできること」の項目には、ID連携を活用することで実現できる施策として以下の点が挙げられています。\n• セグメント配信（選択肢1）\n• リッチメニューの出し分け（選択肢3）\n• Webサイト・アプリとの連携（選択肢4）\n選択肢2の「LINE Keepへの自動保存」は、ID連携によって可能になることとしてはソースに記載されていません。",
+                        source: "出典：【図解あり】LINEのID連携でできることとは？認証の仕組みと企業が導入すべきメリットを解説",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/id-connected.html"
+                    }
+                ]
+            },
+            // Day 2 (5月20日解禁)
+            {
+                unlockDate: '2025/05/20',
+                questions: [
+                    {
+                        day: 2,
+                        questionNumber: 1,
+                        type: 'matching', // 形式: 組み合わせ
+                        questionText: "『【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説』によると、プロバイダーとチャネルはLINE APIを利用する上で重要な概念です。\n以下の左側の用語と右側の説明が正しく組み合わされるように、プルダウンから選択してください。",
+                        matchingPairs: [
+                            { term: "プロバイダー", options: ["ユーザーとのやり取りの接点", "サービスを提供し、ユーザーの個人情報を取得する開発者個人、企業、または団体等", "LINE Developersコンソールで設定する通知先URL"] },
+                            { term: "チャネル", options: ["ユーザーとのやり取りの接点", "サービスを提供し、ユーザーの個人情報を取得する開発者個人、企業、または団体等", "LINE Developersコンソールで設定する通知先URL"] }
+                        ],
+                        correctAnswers: ["サービスを提供し、ユーザーの個人情報を取得する開発者個人、企業、または団体等", "ユーザーとのやり取りの接点"], // 組み合わせる説明のテキスト
+                        explanation: "正解は以下の組み合わせです。\nプロバイダー: サービスを提供し、ユーザーの個人情報を取得する開発者個人、企業、または団体等\nチャネル: ユーザーとのやり取りの接点\nチャネルは必ずプロバイダーに属します。",
+                        source: "出典：【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/provider.html"
+                    },
+                    {
+                        day: 2,
+                        questionNumber: 2,
+                        type: 'multiple-choice', // 形式: 複数選択
+                        questionText: "『【図解あり】LINEのID連携でできることとは？認証の仕組みと企業が導入すべきメリットを解説』によると、LINEのID連携を実現するには特定のAPIを活用し、いくつかの注意点があります。\nLINEのID連携の導入方法や注意点について、この『【図解あり】LINEのID連携でできることとは？認証の仕組みと企業が導入すべきメリットを解説』に記載されている内容として正しいものを全て選んでください。",
+                        options: [
+                            "ID連携を実現するためには、LINEが提供するAPI「LINEログイン」もしくは「Messaging API」を活用する必要があります。",
+                            "LINEログインを使ったID連携では、ユーザー認証・認可の機能をWebサイトやサービス側で別途実装する必要がありません。",
+                            "Messaging APIでID連携機能を使う場合、ユーザーにID連携の解除機能を必ず提供する必要があり、ID連携する時には解除機能があることを通知する必要があります。",
+                            "Messaging APIを使ったID連携では、WebアプリごとにLINE DevelopersコンソールでID連携設定が必要となります。"
+                        ],
+                        correctAnswers: [0, 2],
+                        explanation: "正解は 1, 3 です。\n『【図解あり】LINEのID連携でできることとは？認証の仕組みと企業が導入すべきメリットを解説』には、ID連携について以下の説明があります。\n• ID連携を実現するためには、LINEが提供するAPI「LINEログイン」もしくは「Messaging API」を活用する必要があります。(選択肢1は正しい)\n• LINEログインを組み込むWebサイトやサービス側で別途、認証・認可の機能を実装する必要がなくなります。ユーザー認証・認可はユーザーとLINEの間で直接行われます。選択肢2は誤りです。\n• ID連携機能を使う場合は、ユーザーにID連携の解除機能を必ず提供することと、ユーザーがID連携する時、連携解除機能があることを通知することの2点を遵守する必要があると記載されています。(選択肢3は正しい)\n• LINEログインでID連携を促す場合、WebアプリごとにLINE DevelopersコンソールでLINEログインの設定が必要になりますが、Messaging APIの場合、サービス単体でID連携が実現することが可能です。選択肢4は誤りです。",
+                        source: "出典：【図解あり】LINEのID連携でできることとは？認証の仕組みと企業が導入すべきメリットを解説",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/id-connected.html"
+                    },
+                    {
+                        day: 2,
+                        questionNumber: 3,
+                        type: 'dropdown', // 形式: プルダウン
+                        questionText: "『【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用』によると、Messaging APIからWebhookによりデータを取得する方法において、Webhook URLはいくつ設定できますか？",
+                        options: [
+                            "1つのみ",
+                            "複数設定可能",
+                            "設定数に制限はない"
+                        ],
+                        correctAnswer: 0, // 0-indexed (1つのみ)
+                        explanation: "正解は「1つのみ」です。\nMessaging APIからWebhookによりデータを取得する方法では、Webhook URLは1つのみしか設定することができません。複数のツールで利用したい場合は、他のLINE APIを併用する方法が挙げられています。",
+                        source: "出典：【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/webhook.html"
+                    }
+                ]
+            },
+            // Day 3 (5月22日解禁)
+            {
+                unlockDate: '2025/05/22',
+                questions: [
+                    {
+                        day: 3,
+                        questionNumber: 1,
+                        type: 'true-false', // 形式: 正誤問題
+                        questionText: "『【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説』によると、同一プロバイダー内に作成したチャネルについては、全て異なるユニークな識別ID（ユーザーID）が発行されます。",
+                        correctAnswer: false, // 正誤 (false = 誤り)
+                        explanation: "正解は「× 誤り」です。\n『【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説』によると、LINEではプロバイダーごとにユニークな識別ID(ユーザーID)が発行され、同一プロバイダー内に作成したチャネルについては、全て同じユーザーIDが発行されるようになっています。",
+                        source: "出典：【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/provider.html"
+                    },
+                    {
+                        day: 3,
+                        questionNumber: 2,
+                        type: 'multiple-choice', // 形式: 複数選択
+                        questionText: "『【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説』によると、プロバイダーには「認証プロバイダー」というものがあり、いくつかのメリットがあります。\n以下の選択肢のうち、この『【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説』に記載されている認証プロバイダーについて、正しいものを全て選んでください。",
+                        options: [
+                            "認証プロバイダーになると、ユーザーが確認する同意画面に「認証プロバイダーバッジ」を表示できるようになります。",
+                            "認証プロバイダーバッジは、LINEヤフー株式会社が、プロバイダーを作成したサービス提供者が実在する組織であり、プライバシーポリシーを定めていることなどを確認した証です。",
+                            "認証プロバイダーバッジを表示するには特別な手続きは不要で、プロバイダーを作成すれば自動的に表示されます。",
+                            "認証プロバイダーになることで、LINE通知メッセージ、ミッションスタンプ、既読APIなどの機能を利用することができます。"
+                        ],
+                        correctAnswers: [0, 1, 3],
+                        explanation: "正解は 1, 2, 4 です。\n『【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説』には、認証プロバイダーについて以下の説明があります。\n• プロバイダーには「認証プロバイダー」というものがあり、認証プロバイダーになると、ユーザーが確認する同意画面に「認証プロバイダーババイラストは、プロバイダーを作成したサービス提供者が本物であることをLINEヤフー株式会社が確認した証であり、実在する組織であること、その組織に所属している方（またはその代理人）からの申請であること、プライバシーポリシーを定め、公開している組織であることが条件として挙げられています。(選択肢2は正しい)\n• 認証プロバイダーバッジを表示するには手続きが必要です。所定の申請等を行った法人ユーザーのみが表示できます。認証済ミニアプリを取得することでも認証プロバイダーになることができます。選択肢3は誤りです。\n• 認証プロバイダーになるメリットとして、LINE通知メッセージ、ミッションスタンプ、既読API、クイック入力といった機能の利用が挙げられています。(選択肢4は正しい)",
+                        source: "出典：【図解あり】LINE APIを使うなら知っておきたい！プロバイダーと認証プロバイダーの違いを解説",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/provider.html"
+                    },
+                    {
+                        day: 3,
+                        questionNumber: 3,
+                        type: 'fill-in-the-blank', // 形式: 穴埋め
+                        questionText: "『【図解あり】LINEのID連携でできることとは？認証の仕組みと企業が導入すべきメリットを解説』によると、企業が保有する顧客情報とユーザーのLINEアカウントを連携することで、「企業が管理する情報」と「LINEのユーザー情報」を紐づけ、___的に管理することが可能になります。",
+                        correctAnswer: "一元的", // 穴埋めの正解
+                        answerLength: 4, // 文字数
+                        hint: "バラバラではなく、一つにまとめることです。", // ヒントテキスト
+                        explanation: "正解は「一元的」です。\n企業が保有する顧客情報とユーザーのLINEアカウントを連携することで、「企業が管理する情報」と「LINEのユーザー情報」を紐づけ、一元的に管理することが可能になります。",
+                        source: "出典：【図解あり】LINEのID連携でできることとは？認証の仕組みと企業が導入すべきメリットを解説",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/id-connected.html"
+                    }
+                ]
+            },
+            // Day 4 (5月23日解禁)
+            {
+                unlockDate: '2025/05/23',
+                questions: [
+                    {
+                        day: 4,
+                        questionNumber: 1,
+                        type: 'multiple-choice', // 形式: 複数選択
+                        questionText: "『【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用』によると、LINEのWebhookはユーザーのアクションをシステムが自動的に処理するために活用されます。\nこの『【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用』に記載されているLINEのWebhookの仕組みやイベントについて、正しいものを全て選んでください。",
+                        options: [
+                            "Webhookは、特定のイベントが発生した際に、事前に指定されたサーバーへ自動的に通知を送信する仕組みです。",
+                            "ユーザーがLINE公式アカウントにメッセージを送ったり、友だち追加したりすると、LINEプラットフォームからWebhookイベントオブジェクトを含むHTTP POSTリクエストが、Webhook URLに指定したURLへ送られます。",
+                            "Webhookを通じて取得できるイベントタイプは、1対1のトークとグループトークで同じです。",
+                            "Webhook URLは、LINE DevelopersコンソールのMessaging API設定から設定します。"
+                        ],
+                        correctAnswers: [0, 1, 3],
+                        explanation: "正解は 1, 2, 4 です。\n『【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用』には、Webhookについて以下の説明があります。\n• Webhookとは、「特定のイベントが発生した際に、事前に指定されたサーバーへ自動的に通知を送信する仕組み」です。これにより、手動で確認したり連携したりする手間を省き、システムが自動的に処理を進めてくれるようになります。(選択肢1は正しい)\n• ユーザーが、LINE公式アカウントを友だち追加したり、LINE公式アカウントにメッセージを送ったりすると、LINEプラットフォームからWebhookイベントオブジェクトを含むHTTP POSTリクエストが、LINE Developersコンソールの「Webhook URL」に指定したURL（ボットサーバー）に対して送られます。(選択肢2は正しい)\n• Webhookを通じて取得できるイベントは、1対1とグループトークで違うと記載されています。選択肢3は誤りです。\n• LINE Developersのチャンネルを開き > Messaging API設定の下、「Webhook設定」で設定します。(選択肢4は正しい)",
+                        source: "出典：【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/webhook.html"
+                    },
+                    {
+                        day: 4,
+                        questionNumber: 2,
+                        type: 'matching', // 形式: 組み合わせ
+                        questionText: "『【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用』では、Webhook URLや複数ツールでのWebhookの利用方法についても触れられています。\n以下の左側の用語と右側の説明が正しく組み合わされるように、プルダウンから選択してください。",
+                        matchingPairs: [
+                            { term: "Webhook URL", options: ["特定のイベント発生時に通知を送るURL", "LINE Developersコンソールで複数設定可能", "ユーザーIDを取得するためのAPI"] },
+                            { term: "複数ツールでのWebhook利用", options: ["特定のイベント発生時に通知を送るURL", "LINE Developersコンソールで複数設定可能", "他のLINE API（LINEログイン、LINEミニアプリ等）を併用"] }
+                        ],
+                        correctAnswers: ["特定のイベント発生時に通知を送るURL", "他のLINE API（LINEログイン、LINEミニアプリ等）を併用"], // 組み合わせる説明のテキスト
+                        explanation: "正解は以下の組み合わせです。\nWebhook URL: 特定のイベント発生時に通知を送るURL\n複数ツールでのWebhook利用: 他のLINE API（LINEログイン、LINEミニアプリ等）を併用\nMessaging APIからWebhookによりデータを取得する場合、Webhook URLは1つのみ設定可能です。",
+                        source: "出典：【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/webhook.html"
+                    },
+                    {
+                        day: 4,
+                        questionNumber: 3,
+                        type: 'true-false', // 形式: 正誤問題
+                        questionText: "『【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用』に記載されているWebhook活用事例として、「イベント前に管理者が手動で一斉メッセージを送信する」が挙げられています。",
+                        correctAnswer: false, // 正誤 (false = 誤り)
+                        explanation: "正解は「× 誤り」です。\n『【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用』では、「イベント前に管理者が手動で一斉メッセージを送信する」はWebhook導入前の状態として説明されており、Webhookを活用した事例としては不適切です。",
+                        source: "出典：【図解あり】LINEのWebhook入門 ─ 初心者でも使える設定方法とイベント活用",
+                        sourceUrl: "https://lineapiusecase.com/ja/api/webhook.html"
+                    }
+                ]
+            }
+        ];
+
+        const startScreen = document.getElementById('start-screen');
+        const quizArea = document.getElementById('quiz-area');
+        const resultScreen = document.getElementById('result-screen');
+        const endScreen = document.getElementById('end-screen');
+        const startButton = document.getElementById('start-button');
+        const resultTitle = document.getElementById('result-title');
+        const scoreDisplay = document.getElementById('score');
+        const apiLevelDisplay = document.getElementById('api-level'); // APIレベル表示用
+        const resultMessage = document.getElementById('result-message');
+        const nextDayButton = document.getElementById('next-day-button');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const finalApiLevelDisplay = document.getElementById('final-api-level'); // 最終APIレベル表示用
+        const endMessage = document.getElementById('end-message');
+        const restartButton = document.getElementById('restart-button');
+        const unlockMessageDiv = document.getElementById('unlock-message'); // 解禁日メッセージ表示用
+        const quizPeriodDisplay = document.getElementById('quiz-period'); // クイズ期間表示用
+
+
+        // 次の問題/結果を見るボタン要素を事前に取得
+        const nextButtonArea = document.getElementById('next-button-area');
+        const nextQuestionButton = document.getElementById('next-question-button');
+        const showResultButton = document.getElementById('show-result-button');
+
+
+        let currentDay = 0; // 0-indexed
+        let currentQuestionIndex = 0; // Index within the current day's questions
+        let correctAnswersCount = 0; // 正解数
+
+        // 日付が解禁されているかチェックする関数
+        function isDayUnlocked(dayIndex) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // 時刻情報をリセットして日付のみで比較
+
+            const unlockDateStr = quizData[dayIndex].unlockDate;
+            const unlockDate = new Date(unlockDateStr);
+            unlockDate.setHours(0, 0, 0, 0); // 時刻情報をリセット
+
+            const allUnlockedDate = new Date('2025/05/24');
+            allUnlockedDate.setHours(0, 0, 0, 0); // 時刻情報をリセット
+
+            // 5月24日以降は全て解禁
+            if (today >= allUnlockedDate) {
+                return true;
+            }
+
+            // 指定された解禁日以降かチェック
+            return today >= unlockDate;
+        }
+
+         // クイズ期間を表示する関数
+         function displayQuizPeriod() {
+             let periodText = "クイズ公開期間：";
+             quizData.forEach((dayData, index) => {
+                 const unlockDate = new Date(dayData.unlockDate);
+                 const month = unlockDate.getMonth() + 1; // 月は0から始まるため+1
+                 const day = unlockDate.getDate();
+                 periodText += ` 第${index + 1}日目: ${month}月${day}日`;
+                 if (index < quizData.length - 1) {
+                     periodText += "、";
+                 }
+             });
+             // 5月24日以降の全解禁について追記
+             periodText += "、5月24日以降は全ての問題が解けます。";
+             quizPeriodDisplay.textContent = periodText;
+         }
+
+
+        // クイズ開始ボタンのイベントリスナー
+        startButton.addEventListener('click', () => {
+            if (isDayUnlocked(currentDay)) {
+                startScreen.classList.add('hidden');
+                quizArea.classList.remove('hidden');
+                unlockMessageDiv.classList.add('hidden'); // メッセージを非表示に
+                loadQuestion(currentDay, currentQuestionIndex); // 最初の問題を表示
+            } else {
+                const unlockDateStr = quizData[currentDay].unlockDate;
+                const unlockDate = new Date(unlockDateStr);
+                const month = unlockDate.getMonth() + 1;
+                const day = unlockDate.getDate();
+                unlockMessageDiv.textContent = `第${currentDay + 1}日目のクイズは ${month}月${day}日 に解禁されます。`;
+                unlockMessageDiv.classList.remove('hidden');
+            }
+        });
+
+        // 次の問題へボタンのイベントリスナー
+        nextQuestionButton.addEventListener('click', () => {
+             nextButtonArea.classList.add('hidden'); // ボタンを非表示にする
+             currentQuestionIndex++;
+             loadQuestion(currentDay, currentQuestionIndex); // 次の問題を表示
+        });
+
+        // 結果を見るボタンのイベントリスナー
+        showResultButton.addEventListener('click', () => {
+             nextButtonArea.classList.add('hidden'); // ボタンを非表示にする
+             showResultScreen(); // 結果画面を表示
+        });
+
+
+        // 次の日へ進むボタンのイベントリスナー
+        nextDayButton.addEventListener('click', () => {
+            const nextDayIndex = currentDay + 1;
+            if (nextDayIndex < quizData.length) {
+                if (isDayUnlocked(nextDayIndex)) {
+                     resultScreen.classList.add('hidden');
+                     quizArea.classList.remove('hidden');
+                     unlockMessageDiv.classList.add('hidden'); // メッセージを非表示に
+                     currentDay = nextDayIndex;
+                     currentQuestionIndex = 0;
+                     correctAnswersCount = 0; // Reset count for the new day
+                     loadQuestion(currentDay, currentQuestionIndex); // 次の日の最初の問題を表示
+                } else {
+                     // 次の日がまだ解禁されていない場合
+                     resultScreen.classList.add('hidden');
+                     quizArea.classList.remove('hidden'); // quizAreaを表示
+                     const unlockDateStr = quizData[nextDayIndex].unlockDate;
+                     const unlockDate = new Date(unlockDateStr);
+                     const month = unlockDate.getMonth() + 1;
+                     const day = unlockDate.getDate();
+                     unlockMessageDiv.textContent = `第${nextDayIndex + 1}日目のクイズは ${month}月${day}日 に解禁されます。`;
+                     unlockMessageDiv.classList.remove('hidden');
+                     // 次の日へ進むボタンは結果画面で非表示になるため、ここでは特にボタン表示の制御は不要
+                }
+            } else {
+                 // 全ての日が終了している場合
+                 showEndScreen();
+            }
+        });
+
+        // 最初からやり直すボタンのイベントリスナー
+        restartButton.addEventListener('click', () => {
+             endScreen.classList.add('hidden');
+             startScreen.classList.remove('hidden');
+             currentDay = 0;
+             currentQuestionIndex = 0;
+             correctAnswersCount = 0;
+             quizArea.innerHTML = ''; // クイズエリアをクリア
+             unlockMessageDiv.classList.add('hidden'); // メッセージを非表示に
+             // loadQuestion() はスタートボタンクリック時に呼ばれるため不要
+        });
+
+
+        // 指定された問題を表示する関数
+        function loadQuestion(dayIndex, questionIndex) {
+            quizArea.innerHTML = ''; // 前の問題をクリア
+            // unlockMessageDivはクリアされないようにinnerHTMLの外に配置
+
+            const question = quizData[dayIndex].questions[questionIndex]; // questions配列から問題を取得
+
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            // data-question-index は不要になるが、互換性のため残しておく
+            questionElement.setAttribute('data-question-index', questionIndex);
+
+            let optionsHtml = '';
+            let questionTextHtml = question.questionText.replace(/\n/g, '<br>');
+
+            // 問題形式に応じた表示を生成
+            switch (question.type) {
+                case 'multiple-choice':
+                    optionsHtml = question.options.map((option, optionIndex) => `
+                        <label>
+                            <input type="checkbox" name="q${dayIndex}-${questionIndex}" value="${optionIndex}">
+                            ${option}
+                        </label>
+                    `).join('');
+                    break;
+                case 'image-select-diagram': // 図選択問題
+                    optionsHtml = question.imageOptions.map((imgOption, imgIndex) => `
+                        <div class="image-option" data-image-index="${imgIndex}">
+                            <img src="${imgOption.src}" alt="${imgOption.description}">
+                            <p class="text-center text-sm mt-1">${imgOption.description}</p>
+                        </div>
+                    `).join('');
+                    // Add event listeners for image selection
+                    setTimeout(() => { // Ensure elements are in the DOM
+                        const imageOptions = questionElement.querySelectorAll('.image-option');
+                        imageOptions.forEach(imgDiv => {
+                            imgDiv.addEventListener('click', () => {
+                                // Deselect all other images for this question
+                                imageOptions.forEach(otherImgDiv => otherImgDiv.classList.remove('selected'));
+                                // Select the clicked image
+                                imgDiv.classList.add('selected');
+                            });
+                        });
+                    }, 0);
+                    break;
+                case 'fill-in-the-blank':
+                    // 穴埋め部分をinputタグ、文字数補足、ヒントボタンに置き換え
+                    questionTextHtml = question.questionText.replace("___", `
+                        <span class="fill-in-the-blank-container">
+                            <input type="text" id="fill-in-${dayIndex}-${questionIndex}" class="fill-in-the-blank-input" size="${question.answerLength}">
+                            <span class="fill-in-the-blank-info">(${question.answerLength}文字)</span>
+                            <button class="hint-button" onclick="showHint(${dayIndex}, ${questionIndex})">ヒント</button>
+                        </span>
+                    `);
+                     optionsHtml = `<div id="hint-${dayIndex}-${questionIndex}" class="hint-text hidden">ヒント: ${question.hint}</div>`;
+                    break;
+                case 'matching':
+                    optionsHtml = question.matchingPairs.map((pair, pairIndex) => {
+                        const selectOptions = pair.options.map((option, optionIndex) => `
+                            <option value="${optionIndex}">${option}</option>
+                        `).join('');
+                        return `
+                            <div class="matching-pair">
+                                <span>${pair.term}</span>
+                                <select id="matching-${dayIndex}-${questionIndex}-${pairIndex}" class="matching-select">
+                                    <option value="">選択してください</option>
+                                    ${selectOptions}
+                                </select>
+                            </div>
+                        `;
+                    }).join('');
+                    break;
+                case 'dropdown':
+                     optionsHtml = `
+                        <select id="dropdown-${dayIndex}-${questionIndex}" class="dropdown-select">
+                            <option value="">選択してください</option>
+                            ${question.options.map((option, optionIndex) => `
+                                <option value="${optionIndex}">${option}</option>
+                            `).join('')}
+                        </select>
+                     `;
+                     break;
+                case 'true-false': // 正誤問題
+                    optionsHtml = `
+                        <div class="true-false-options">
+                            <label>
+                                <input type="radio" name="q${dayIndex}-${questionIndex}" value="true"> 〇 正しい
+                            </label>
+                            <label>
+                                <input type="radio" name="q${dayIndex}-${questionIndex}" value="false"> × 誤り
+                            </label>
+                        </div>
+                    `;
+                    break;
+            }
+
+            questionElement.innerHTML = `
+                <h2 class="text-xl font-semibold mb-4">第${question.day}日目 - 第${question.questionNumber}問</h2>
+                <p class="question-text">${questionTextHtml}</p>
+                <div class="options" id="options-${dayIndex}-${questionIndex}">
+                    ${optionsHtml}
+                </div>
+                <button class="check-button mt-4" onclick="checkAnswer(${dayIndex}, ${questionIndex})">回答を確認</button>
+                <div class="result mt-4" id="result-${dayIndex}-${questionIndex}"></div>
+                <div class="explanation mt-2 hidden" id="explanation-${dayIndex}-${questionIndex}">
+                    <strong>正解と解説:</strong><br>
+                    ${question.explanation.replace(/\n/g, '<br>')}
+                    <div class="source">${question.source} (<a href="${question.sourceUrl}" target="_blank">${question.sourceUrl}</a>)</div>
+                </div>
+            `;
+            quizArea.appendChild(questionElement); // 問題をquizAreaに直接追加
+        }
+
+        // ヒントを表示する関数
+        function showHint(dayIndex, questionIndex) {
+            const hintDiv = document.getElementById(`hint-${dayIndex}-${questionIndex}`);
+            if (hintDiv) {
+                hintDiv.classList.toggle('hidden');
+            }
+        }
+
+
+        // 回答をチェックする関数
+        function checkAnswer(dayIndex, questionIndex) {
+            const question = quizData[dayIndex].questions[questionIndex]; // questions配列から問題を取得
+            const resultDiv = document.getElementById(`result-${dayIndex}-${questionIndex}`);
+            const explanationDiv = document.getElementById(`explanation-${dayIndex}-${questionIndex}`);
+            const checkButton = quizArea.querySelector(`[onclick="checkAnswer(${dayIndex}, ${questionIndex})"]`);
+
+            // 一度回答したらボタンを無効化
+            checkButton.disabled = true;
+            checkButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+            let isCorrect = false;
+            let userAnswers = [];
+
+            // 問題形式に応じた回答取得と判定
+            switch (question.type) {
+                case 'multiple-choice':
+                    const checkboxes = document.querySelectorAll(`#options-${dayIndex}-${questionIndex} input[type="checkbox"]:checked`);
+                    userAnswers = Array.from(checkboxes).map(cb => parseInt(cb.value)).sort();
+                    const correctAnswersMulti = question.correctAnswers.sort();
+                    if (userAnswers.length === correctAnswersMulti.length) {
+                        isCorrect = userAnswers.every((answer, index) => answer === correctAnswersMulti[index]);
+                    }
+                    break;
+                case 'image-select-diagram': // 図選択問題
+                    const selectedImage = document.querySelector(`#options-${dayIndex}-${questionIndex} .image-option.selected`);
+                    if (selectedImage) {
+                        const selectedIndex = parseInt(selectedImage.getAttribute('data-image-index'));
+                        isCorrect = selectedIndex === question.correctAnswer;
+                         // 画像選択を無効化
+                        const imageOptions = document.querySelectorAll(`#options-${dayIndex}-${questionIndex} .image-option`);
+                        imageOptions.forEach(imgDiv => imgDiv.style.pointerEvents = 'none');
+                    } else {
+                        isCorrect = false; // 画像が選択されていない場合
+                    }
+                    break;
+                case 'fill-in-the-blank':
+                    const inputText = document.getElementById(`fill-in-${dayIndex}-${questionIndex}`).value.trim();
+                    isCorrect = inputText === question.correctAnswer;
+                     // 入力フィールドを無効化
+                    document.getElementById(`fill-in-${dayIndex}-${questionIndex}`).disabled = true;
+                    // ヒントボタンを無効化
+                    const hintButton = quizArea.querySelector(`[onclick="showHint(${dayIndex}, ${questionIndex})"]`);
+                     if (hintButton) hintButton.disabled = true;
+                    break;
+                case 'matching':
+                    const selects = document.querySelectorAll(`#options-${dayIndex}-${questionIndex} .matching-select`);
+                    userAnswers = Array.from(selects).map(select => {
+                        const selectedOptionIndex = parseInt(select.value);
+                        // 選択肢のテキストを取得
+                         if (select.value === "") return null; // 未選択の場合はnull
+                        // matchingPairsの構造に合わせて正しいオプションテキストを取得
+                        const pairIndex = parseInt(select.id.split('-')[3]); // Index within matchingPairs
+                        return question.matchingPairs[pairIndex].options[selectedOptionIndex];
+                    });
+
+                    // 未選択のプルダウンがないかチェック
+                    if (userAnswers.includes(null)) {
+                        isCorrect = false;
+                    } else {
+                         // ユーザーの回答順序を、問題定義のmatchingPairsの順序に合わせる
+                        const orderedUserAnswers = question.matchingPairs.map((pair, pairIndex) => {
+                             const selectElement = document.getElementById(`matching-${dayIndex}-${questionIndex}-${pairIndex}`);
+                             const selectedOptionIndex = parseInt(selectElement.value);
+                             return pair.options[selectedOptionIndex];
+                        });
+
+                        isCorrect = orderedUserAnswers.every((answer, index) => answer === question.correctAnswers[index]);
+                    }
+                     // プルダウンを無効化
+                    selects.forEach(select => select.disabled = true);
+                    break;
+                case 'dropdown':
+                    const dropdown = document.getElementById(`dropdown-${dayIndex}-${questionIndex}`);
+                    const selectedValue = parseInt(dropdown.value);
+                    isCorrect = selectedValue === question.correctAnswer;
+                     // プルダウンを無効化
+                    dropdown.disabled = true;
+                    break;
+                 case 'true-false': // 正誤問題
+                    const selectedRadio = document.querySelector(`#options-${dayIndex}-${questionIndex} input[type="radio"]:checked`);
+                    if (selectedRadio) {
+                        const userAnswerBoolean = selectedRadio.value === 'true';
+                        isCorrect = userAnswerBoolean === question.correctAnswer;
+                         // ラジオボタンを無効化
+                        const radioButtons = document.querySelectorAll(`#options-${dayIndex}-${questionIndex} input[type="radio"]`);
+                        radioButtons.forEach(radio => radio.disabled = true);
+                    } else {
+                        isCorrect = false; // 選択されていない場合
+                    }
+                    break;
+            }
+
+            // 正解数をカウント
+            if (isCorrect) {
+                correctAnswersCount++;
+            }
+
+            // 結果表示
+            resultDiv.classList.remove('correct', 'incorrect'); // クラスをリセット
+            if (isCorrect) {
+                resultDiv.classList.add('correct');
+                resultDiv.textContent = '正解です！';
+            } else {
+                resultDiv.classList.add('incorrect');
+                // 不正解の場合、複数選択と組み合わせ以外は正解を表示
+                 let incorrectMessage = '不正解です。';
+                 if (question.type === 'fill-in-the-blank') {
+                      incorrectMessage += ` 正解は「${question.correctAnswer}」です。`;
+                 } else if (question.type === 'dropdown') {
+                      incorrectMessage += ` 正解は「${question.options[question.correctAnswer]}」です。`;
+                 } else if (question.type === 'true-false') {
+                      incorrectMessage += ` 正解は「${question.correctAnswer ? '〇 正しい' : '× 誤り'}」です。`;
+                 } else if (question.type === 'image-select-diagram') {
+                      // 図選択問題の正解表示は解説に任せるか、descriptionを表示
+                       incorrectMessage += ` 正解は解説をご確認ください。`;
+                 } else if (question.type === 'matching') {
+                      incorrectMessage += ` 正解は解説をご確認ください。`;
+                 }
+                resultDiv.textContent = incorrectMessage;
+            }
+
+            // 解説を表示
+            explanationDiv.classList.remove('hidden');
+
+            // 次の問題へ進むか、結果表示へ進むかのボタンを表示
+            if (questionIndex < quizData[dayIndex].questions.length - 1) { // questions配列の長さを参照
+                 // その日の問題がまだ残っている場合
+                 nextQuestionButton.classList.remove('hidden');
+                 showResultButton.classList.add('hidden');
+            } else {
+                 // その日の最後の問題の場合
+                 nextQuestionButton.classList.add('hidden');
+                 showResultButton.classList.remove('hidden');
+            }
+            nextButtonArea.classList.remove('hidden'); // ボタンエリアを表示
+        }
+
+        // 結果表示画面を表示する関数
+        function showResultScreen() {
+            quizArea.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+
+            const questionsTodayCount = quizData[currentDay].questions.length; // questions配列の長さを参照
+            resultTitle.textContent = `第${currentDay + 1}日目 結果`;
+            scoreDisplay.textContent = `${questionsTodayCount}問中 ${correctAnswersCount}問正解！`;
+
+            // APIレベルの判定と表示
+            let apiLevel = '';
+            if (correctAnswersCount === questionsTodayCount) {
+                apiLevel = "API上級者";
+            } else if (correctAnswersCount === questionsTodayCount - 1) { // 3問中2問正解
+                 apiLevel = "API中級者";
+            } else { // 3問中0問または1問正解
+                apiLevel = "API初心者";
+            }
+            apiLevelDisplay.textContent = `レベル: ${apiLevel}`;
+
+            // 正解数に応じたメッセージ
+            let message = '';
+            if (correctAnswersCount === questionsTodayCount) {
+                message = "素晴らしい！全問正解です！この調子で頑張りましょう！";
+            } else if (correctAnswersCount >= questionsTodayCount / 2) {
+                message = "よく頑張りました！もう少しで満点ですね！";
+            } else {
+                message = "大丈夫！解説を読んで理解を深めましょう。次も挑戦です！";
+            }
+            resultMessage.textContent = message;
+
+            // 次の日があるか判定し、ボタン表示を切り替え
+            if (currentDay < quizData.length - 1) {
+                nextDayButton.classList.remove('hidden');
+                 endScreen.classList.add('hidden'); // 終了画面は非表示
+            } else {
+                // 全ての日が終了
+                nextDayButton.classList.add('hidden');
+                resultScreen.classList.add('hidden');
+                showEndScreen();
+            }
+        }
+
+        // 終了画面を表示する関数
+        function showEndScreen() {
+             endScreen.classList.remove('hidden');
+             // 最終的な合計正解数を正確に表示するには、各問題の正誤状態を保持する必要があります。
+             // 現在の実装では各日の正解数はリセットされるため、ここでは最終日の結果を表示します。
+             const lastDayIndex = quizData.length - 1;
+             const lastDayQuestionsCount = quizData[lastDayIndex].questions.length; // 最終日の問題数
+             finalScoreDisplay.textContent = `最終日の結果: ${lastDayQuestionsCount}問中 ${correctAnswersCount}問正解！`; // 最終日の正解数を表示
+
+             // 最終日の結果に基づいたレベル表示
+             let finalApiLevel = '';
+             const lastDayCorrect = correctAnswersCount; // 最終日の正解数
+
+             if (lastDayCorrect === lastDayQuestionsCount) {
+                 finalApiLevel = "API上級者";
+             } else if (lastDayCorrect === lastDayQuestionsCount - 1) {
+                 finalApiLevel = "API中級者";
+             } else {
+                 finalApiLevel = "API初心者";
+             }
+             finalApiLevelDisplay.textContent = `最終レベル: ${finalApiLevel}`;
+
+
+             endMessage.textContent = "これでクイズは全て終了です！LINE APIの学習、お疲れ様でした！";
+        }
+
+
+        // ページ読み込み時はスタート画面のみ表示
+        window.onload = () => {
+            startScreen.classList.remove('hidden');
+            quizArea.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            nextButtonArea.classList.add('hidden'); // ボタンエリアも非表示に
+            displayQuizPeriod(); // クイズ期間を表示
+        };
+
+    </script>
+</body>
+</html>
